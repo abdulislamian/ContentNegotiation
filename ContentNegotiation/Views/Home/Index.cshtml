@@ -1,0 +1,170 @@
+﻿
+
+<div class="container">
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none;" id="errorContainer">
+        <strong>Holy guacamole!</strong> You should check in on some of those fields below.
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+
+    <div class="row">
+        <div class="col-3">
+            <select id="contentTypes" class="form-control">
+                <option value="">Select Content-Type</option>
+                <option value="application/json">text/json</option>
+                <option value="text/html">text/html</option>
+                <option value="text/xml">text/xml</option>
+                <option value="text/plain">text/plain</option>
+                <option value="text/csv">text/csv</option>
+                <option value="text/pdf">text/pdf</option>
+            </select>
+            <br />
+        </div>
+        <div class="col-9 text-right">
+                <a asp-controller="StudentNew" class="btn btn-info" asp-action="GetAll">Get All</a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-6">
+            <a class="btn btn-primary" id="loadStudentDetails">Load Student</a>
+        </div>
+        <div class="col-6">
+            <h3 class="text-danger text-right" id="ContentTypelbl"></h3>
+        </div>
+    </div>
+</div>
+
+</br>
+<div class="container @*d-flex justify-content-center align-content-center*@">
+    <div class="row">
+        <div class="col-12">
+            <div id="studentDetails">
+            </div>
+            <p id="Paragraph"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+
+        $("#loadStudentDetails").click(function () {
+            var contentTypeInput = $("#contentTypes");
+            var errorContainer = $("#errorContainer");
+
+            var selectedValue = contentTypeInput.val();
+
+            if (selectedValue === "") {
+                errorContainer.text("Error: Please Select Content-Type");
+                errorContainer.show();
+            } else {
+                errorContainer.hide();
+                var headers = { "Accept": selectedValue };
+
+                $.ajax({
+                    url: '/StudentNew/GetAll',
+                    type: 'GET',
+                    headers: headers,
+                    success: function (data, status, xhr) {
+                        var acceptHeader = xhr.getResponseHeader('Content-Type');
+                        debugger;
+                        if (acceptHeader.indexOf('application/json') != -1) {
+                            var students = data;
+
+                            $("#ContentTypelbl").text("Content Type: application/json")
+                            debugger;
+                            var tableHtml = '<table class="table table-striped">';
+                            tableHtml += '<thead><tr><th>ID</th><th>Name</th><th>Address</th><th>Action</th></tr></thead>';
+                            tableHtml += '<tbody>';
+
+                            students.forEach(function (student) {
+                                tableHtml += '<tr>';
+                                tableHtml += '<td>' + student.id + '</td>';
+                                tableHtml += '<td>' + student.name + '</td>';
+                                tableHtml += '<td>' + student.address + '</td>';
+                                tableHtml += `<td><a href="/StudentNew/GetById?id=${student.id}">View Details</a></td>`;
+                                tableHtml += '</tr>';
+                            });
+
+                            tableHtml += '</tbody></table>';
+                            $('#Paragraph').text(JSON.stringify(data));
+                            $('#studentDetails').html(tableHtml);
+                        }
+                        else if (acceptHeader.indexOf('text/html') != -1) {
+                            $("#ContentTypelbl").text("Content Type: text/html")
+                            $('#Paragraph').text(data);
+                            $('#studentDetails').html(data);
+                        } else if (acceptHeader.indexOf('text/plain') != -1) {
+                            $("#ContentTypelbl").text("Content Type: text/plain")
+                            $('#studentDetails').html("");
+                            $('#Paragraph').text(data);
+
+                            const blob = new Blob([data], { type: 'text/plain' });
+
+                            //temporary URL for the Blob
+                            const url = window.URL.createObjectURL(blob);
+
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'student.txt';
+
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+
+                        } else if (acceptHeader.indexOf('text/csv') != -1) {
+                            $("#ContentTypelbl").text("Content Type: text/csv")
+                            $('#studentDetails').html("");
+                            $('#Paragraph').text("");
+                            $('#Paragraph').text(data);
+
+                            const blob = new Blob([data], { type: 'text/csv' });
+
+                            // Create a temporary URL for the Blob
+                            const url = window.URL.createObjectURL(blob);
+
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'student.csv'; 
+
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                        }
+                        else if (acceptHeader.indexOf('text/xml') != -1) {
+                            var xmlData = $(data);
+                            var xmlString = new XMLSerializer().serializeToString(xmlData[0]);
+
+
+                            $("#ContentTypelbl").text("Content Type: application/xml");
+                            var tableHtml = '<table class="table table-striped">';
+                            tableHtml += '<thead><tr><th>ID</th><th>Name</th><th>Address</th><th>Actions</th></tr></thead>';
+                            tableHtml += '<tbody>';
+
+                            xmlData.find('StudentDTO').each(function () {
+                                var id = $(this).find('Id').text();
+                                var name = $(this).find('Name').text();
+                                var address = $(this).find('Address').text();
+
+                                tableHtml += '<tr>';
+                                tableHtml += '<td>' + id + '</td>';
+                                tableHtml += '<td>' + name + '</td>';
+                                tableHtml += '<td>' + address + '</td>';
+                                tableHtml += `<td><a href="/StudentNew/GetById?id=${id}">View Details</a></td>`;
+                                tableHtml += '</tr>';
+                            });
+
+                            tableHtml += '</tbody></table>';
+
+
+
+                            $('#Paragraph').text(xmlString);
+                            $('#studentDetails').html(tableHtml);
+                        }
+                    }
+                });
+            }
+        });
+    });
+</script>
+
+

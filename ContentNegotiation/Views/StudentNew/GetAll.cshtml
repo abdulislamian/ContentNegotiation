@@ -1,0 +1,24 @@
+﻿@using ContentNegotiation.Models.DTO;
+@model List<StudentDTO>
+
+<h1>GetAll</h1>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Address</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var student in Model)
+        {
+            <tr>
+                <td>@student.Id</td>
+                <td>@student.Name</td>
+                <td>@student.Address</td>
+            </tr>
+        }
+    </tbody>
+</table>
