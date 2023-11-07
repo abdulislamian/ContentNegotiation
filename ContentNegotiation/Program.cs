@@ -1,10 +1,8 @@
-using ContentNegotiation.ContentFormater;
 using ContentNegotiation.Data;
-using ContentNegotiation.Models;
-using ContentNegotiation.Models.DTO;
 using ContentNegotiation.Repository;
 using ExtensionMethod;
 using JWTAuthentication.Mapping;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -23,6 +21,9 @@ builder.Services.AddControllersWithViews(config =>
 .CustomTextFormatter();
 
 /*.AddApplicationPart(typeof(StudentDTO.Presentation.AssemblyReference).Assembly)*/;
+builder.Services.ConfigureIISIntegration();
+
+
 
 builder.Services.AddMvc().AddRazorRuntimeCompilation();
 
@@ -55,6 +56,12 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.All
+});
+app.UseCors("CorsPolicy");
+
 
 app.UseRouting();
 app.UseSwagger();

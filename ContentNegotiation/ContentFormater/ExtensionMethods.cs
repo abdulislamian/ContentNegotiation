@@ -19,5 +19,11 @@ namespace ExtensionMethod
             return builder.AddMvcOptions(config => config.OutputFormatters.Add(new
             PlainTextOutputFormatter()));
         }
+        public static void ConfigureIISIntegration(this IServiceCollection services) =>
+         services.Configure<IISOptions>(options =>
+         {
+         });
+
     }
+
 }

@@ -1,6 +1,8 @@
-﻿using ContentNegotiation.Models.DTO;
+﻿using ContentNegotiation.Helper;
+using ContentNegotiation.Models.DTO;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Net.Http.Headers;
+using System;
 using System.Text;
 
 namespace ContentNegotiation.ContentFormater
@@ -26,28 +28,23 @@ namespace ContentNegotiation.ContentFormater
         context, Encoding selectedEncoding)
         {
             var response = context.HttpContext.Response;
-            var buffer = new StringBuilder();
-            if (context.Object is IEnumerable<StudentDTO>)
+            var data = context.Object as IEnumerable<StudentDTO>;
+
+            if (data == null)
+                return;
+
+            using (var buffer = new MemoryStream())
+            using (var writer = new StreamWriter(buffer, selectedEncoding))
             {
-                buffer.Append("<html><body><table class='table table-striped'><tr><th>ID</th><th>Name</th><th>Address</th></tr>");
-                foreach (var student in (IEnumerable<StudentDTO>)context.Object)
-                {
-                        FormatCsv(buffer, student);
-                }
-                buffer.Append("</table></body></html>");
+                var htmlTable = data.ToHtmlTable();
+
+                writer.WriteLine(htmlTable);
+
+                writer.Flush();
+
+                buffer.Position = 0;
+                await buffer.CopyToAsync(response.Body);
             }
-            else
-            {
-                buffer.Append("<html><body><table><tr><th>ID</th><th>Name</th><th>Address</th></tr>");
-                FormatCsv(buffer,(StudentDTO)context.Object);
-                buffer.Append("</table></body></html>");
-            }
-            await response.WriteAsync(buffer.ToString());
-        }
-        private static void FormatCsv(StringBuilder buffer, StudentDTO student)
-        {
-            buffer.AppendLine($"<tr><td>{student.Id}</td><td>{student.Name}</td><td>{student.Address}</td></tr>");
         }
     }
-
 }

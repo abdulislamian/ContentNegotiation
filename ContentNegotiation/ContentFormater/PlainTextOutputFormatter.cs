@@ -1,4 +1,5 @@
-﻿using ContentNegotiation.Models.DTO;
+﻿using ContentNegotiation.Helper.ContentNegotiation.Helper;
+using ContentNegotiation.Models.DTO;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Net.Http.Headers;
 using System.Text;
@@ -26,27 +27,24 @@ namespace ContentNegotiation.ContentFormater
         context, Encoding selectedEncoding)
         {
             var response = context.HttpContext.Response;
-            var buffer = new StringBuilder();
-            if (context.Object is IEnumerable<StudentDTO>)
+            var data = context.Object as IEnumerable<StudentDTO>;
+
+            if (data == null)
+                return;
+
+            using (var buffer = new MemoryStream())
+            using (var writer = new StreamWriter(buffer, selectedEncoding))
             {
-                foreach (var company in (IEnumerable<StudentDTO>)context.Object)
-                {
-                    FormatCsv(buffer, company);
-                }
+                var plainTextTable = data.ToPlainTextTable(); 
+
+                writer.WriteLine(plainTextTable);
+
+                writer.Flush();
+
+                buffer.Position = 0;
+                await buffer.CopyToAsync(response.Body);
             }
-            else
-            {
-                FormatCsv(buffer,(StudentDTO)context.Object);
-            }
-            await response.WriteAsync(buffer.ToString());
-        }
-        private static void FormatCsv(StringBuilder buffer, StudentDTO student)
-        {
-            //buffer.AppendLine($"{student.Id},\"{student.Name},\"{student.Address}\"");
-            buffer.AppendLine($"Id: {student.Id}");
-            buffer.AppendLine($"Name: {student.Name}");
-            buffer.AppendLine($"Address: {student.Address}");
-            buffer.AppendLine();
+
         }
     }
 
